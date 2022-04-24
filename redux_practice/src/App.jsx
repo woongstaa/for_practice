@@ -62,7 +62,7 @@ const Left2 = () => {
 };
 
 const Left3 = () => {
-	// 상태 값을 useSelector로 정의
+	// 상태 값을 useSelector로 호출
 	const number = useSelector((state) => state.number);
 
 	return (
