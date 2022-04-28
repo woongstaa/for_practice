@@ -9,7 +9,7 @@
 console.log(this); // window{...}
 
 function func() {
-	console.log(this); // window{...}
+  console.log(this); // window{...}
 }
 
 func();
@@ -20,7 +20,7 @@ window.func(); // 두 호출문의 기능은 같다
 'use strict';
 
 function func() {
-	console.log(this); // undefined
+  console.log(this); // undefined
 }
 ```
 
@@ -28,26 +28,26 @@ function func() {
 
 ```js
 var obj = {
-	data: 'Lee',
-	func: function () {
-		console.log('안녕');
-		console.log(this);
-	},
+  data: 'Lee',
+  func: function () {
+    console.log('안녕');
+    console.log(this);
+  },
 };
 
 obj.data;
 obj.func();
 
 var obj2 = {
-	data: {
-		func: function () {
-			console.log(this); // data
-		},
-		func2: () => {
-			console.log(this); // window
-			// arrow function은 this값을 상위 요소에서 가져와 사용
-		},
-	},
+  data: {
+    func: function () {
+      console.log(this); // data
+    },
+    func2: () => {
+      console.log(this); // window
+      // arrow function은 this값을 상위 요소에서 가져와 사용
+    },
+  },
 };
 ```
 
@@ -57,7 +57,7 @@ var obj2 = {
 
 ```jsx
 function machine() {
-	this.name = 'Lee';
+  this.name = 'Lee';
 }
 
 var obj = new machine(); // {name: "Lee"}
@@ -67,29 +67,29 @@ var obj = new machine(); // {name: "Lee"}
 
 ```js
 document.getElementById('button').addEventListener('click', function (event) {
-	this; // event.currentTarget
+  this; // event.currentTarget
 
-	var array = [1, 2, 3];
-	array.forEach((data) => {
-		console.log(data); // 1 2 3 각각 순차적으로 return
-		console.log(this); // window, 콜백 함수는 일반 함수에 해당
-	});
+  var array = [1, 2, 3];
+  array.forEach(data => {
+    console.log(data); // 1 2 3 각각 순차적으로 return
+    console.log(this); // window, 콜백 함수는 일반 함수에 해당
+  });
 });
 ```
 
 ```js
 let obj = {
-	names: ['kim', 'lee', 'park'],
-	function: function () {
-		console.log(this); // obj
-		obj.names.forEach(function () {
-			console.log(this); // window, 근본없는 일반함수
-		});
+  names: ['kim', 'lee', 'park'],
+  function: function () {
+    console.log(this); // obj
+    obj.names.forEach(function () {
+      console.log(this); // window, 근본없는 일반함수
+    });
 
-		obj.names.forEach(() => {
-			console.log(this); // obj, 내부의 this값을 변화시키지 않기 때문에 상위의 this값을 가져옴
-		});
-	},
+    obj.names.forEach(() => {
+      console.log(this); // obj, 내부의 this값을 변화시키지 않기 때문에 상위의 this값을 가져옴
+    });
+  },
 };
 ```
 
@@ -98,7 +98,7 @@ let obj = {
 # Arrow function
 
 ```js
-let func = (a) => a + 10;
+let func = a => a + 10;
 
 func(5); // 15
 ```
@@ -115,20 +115,20 @@ func(5); // 15
 ```js
 // before
 [1, 2, 3, 4].forEach(function (array) {
-	console.log(array);
+  console.log(array);
 });
 
 // after
-[1, 2, 3, 4].forEach((array) => console.log(array));
+[1, 2, 3, 4].forEach(array => console.log(array));
 
-document.getElementById('button').addEventListener('click', (event) => {
-	this; // window
+document.getElementById('button').addEventListener('click', event => {
+  this; // window
 });
 
 var obj = {
-	function: () => {
-		console.log(this); // window
-	},
+  function: () => {
+    console.log(this); // window
+  },
 };
 ```
 
@@ -137,7 +137,7 @@ var obj = {
 ```js
 // question
 var people = {
-	name: 'Sonny',
+  name: 'Sonny',
 };
 
 people.sayHi(); // "안녕 나는 Sonny야"가 출력되게 해보자
@@ -146,17 +146,17 @@ people.sayHi(); // "안녕 나는 Sonny야"가 출력되게 해보자
 ```js
 // answer
 var people = {
-	name: 'Sonny',
-	sayHi: function () {
-		console.log(`안녕 나는 ${this.name}야`);
-	},
+  name: 'Sonny',
+  sayHi: function () {
+    console.log(`안녕 나는 ${this.name}야`);
+  },
 };
 ```
 
 ```js
 // question
 var data = {
-	arrayData: [1, 2, 3, 4, 5],
+  arrayData: [1, 2, 3, 4, 5],
 };
 
 data.getSumAll(); // 배열의 모든 합계가 출력되게 but 객체 내부는 수정 금지
@@ -165,17 +165,17 @@ data.getSumAll(); // 배열의 모든 합계가 출력되게 but 객체 내부�
 ```js
 // answer
 var data = {
-	arrayData: [1, 2, 3, 4, 5],
+  arrayData: [1, 2, 3, 4, 5],
 };
 
 data.getSumAll = function () {
-	let sum = 0;
+  let sum = 0;
 
-	this.arrayData.forEach((num) => {
-		sum += num;
-	});
+  this.arrayData.forEach(num => {
+    sum += num;
+  });
 
-	console.log(sum);
+  console.log(sum);
 };
 
 data.getSumAll(); // 15
@@ -184,15 +184,15 @@ data.getSumAll(); // 15
 ```js
 // question
 document.getElementById('button').addEventListener('click', function () {
-	console.log(this.innerHTML); // 1초 뒤에 출력되게
+  console.log(this.innerHTML); // 1초 뒤에 출력되게
 });
 ```
 
 ```js
 // answer
 document.getElementById('button').addEventListener('click', function () {
-	setTimeout(() => {
-		console.log(this.innerHTML);
-	}, 1000);
+  setTimeout(() => {
+    console.log(this.innerHTML);
+  }, 1000);
 });
 ```
