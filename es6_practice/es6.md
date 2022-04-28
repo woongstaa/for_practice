@@ -5,7 +5,7 @@
 1. 그냥 쓰나 일반 함수 안에서 쓰면 {window} => 기본 함수들 수납공간
    1. strict mode + 일반 함수 => undefined
 
-```jsx
+```js
 console.log(this); // window{...}
 
 function func() {
@@ -16,7 +16,7 @@ func();
 window.func(); // 두 호출문의 기능은 같다
 ```
 
-```jsx
+```js
 'use strict';
 
 function func() {
@@ -26,7 +26,7 @@ function func() {
 
 2. object안의 함수, 메서드에서 사용하면 그 함수를 가지고 있는 오브젝트를 뜻함
 
-```jsx
+```js
 var obj = {
 	data: 'Lee',
 	func: function () {
@@ -65,7 +65,7 @@ var obj = new machine(); // {name: "Lee"}
 
 4. eventListener 안에서는 `event.currentTarget`
 
-```jsx
+```js
 document.getElementById('button').addEventListener('click', function (event) {
 	this; // event.currentTarget
 
@@ -77,7 +77,7 @@ document.getElementById('button').addEventListener('click', function (event) {
 });
 ```
 
-```jsx
+```js
 let obj = {
 	names: ['kim', 'lee', 'park'],
 	function: function () {
@@ -91,4 +91,108 @@ let obj = {
 		});
 	},
 };
+```
+
+5. **콜백 함수는 일반함수 취급하기 때문에 this를 사용하고 싶다면 arrow function을 활용해 상위 this를 가져와 사용하는 것이 추천됨**
+
+# Arrow function
+
+```js
+let func = (a) => a + 10;
+
+func(5); // 15
+```
+
+함수는 **코드들을 기능 단위로 묶고 싶을 때** 혹은 **입출력 기계를 만들고 싶을 때** 사용한다
+
+## Arrow function의 장점
+
+1. 가독성이 좋다
+2. 파라미터 1개면 소괄호 생략가능
+3. 코드 한 줄이면 중괄호도 생략 가능
+4. **상위 this값을 내부에서 그대로 사용**
+
+```js
+// before
+[1, 2, 3, 4].forEach(function (array) {
+	console.log(array);
+});
+
+// after
+[1, 2, 3, 4].forEach((array) => console.log(array));
+
+document.getElementById('button').addEventListener('click', (event) => {
+	this; // window
+});
+
+var obj = {
+	function: () => {
+		console.log(this); // window
+	},
+};
+```
+
+### this & arrow function 예제
+
+```js
+// question
+var people = {
+	name: 'Sonny',
+};
+
+people.sayHi(); // "안녕 나는 Sonny야"가 출력되게 해보자
+```
+
+```js
+// answer
+var people = {
+	name: 'Sonny',
+	sayHi: function () {
+		console.log(`안녕 나는 ${this.name}야`);
+	},
+};
+```
+
+```js
+// question
+var data = {
+	arrayData: [1, 2, 3, 4, 5],
+};
+
+data.getSumAll(); // 배열의 모든 합계가 출력되게 but 객체 내부는 수정 금지
+```
+
+```js
+// answer
+var data = {
+	arrayData: [1, 2, 3, 4, 5],
+};
+
+data.getSumAll = function () {
+	let sum = 0;
+
+	this.arrayData.forEach((num) => {
+		sum += num;
+	});
+
+	console.log(sum);
+};
+
+data.getSumAll(); // 15
+```
+
+```js
+// question
+document.getElementById('button').addEventListener('click', function () {
+	console.log(this.innerHTML); // 1초 뒤에 출력되게
+});
+```
+
+```js
+// answer
+document.getElementById('button').addEventListener('click', function () {
+	setTimeout(() => {
+		console.log(this.innerHTML);
+	}, 1000);
+});
 ```
