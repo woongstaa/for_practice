@@ -385,7 +385,7 @@ class GrandParents {
 }
 
 class Parents extends GrandParents {
-  constructor() {
+  constructor(name) {
     super(name); // super: 부모 constructor를 의미
     // super();
     // name을 입력 안했기 때문에 name을 넣었어도 firstName이 undefined가 됩니다.
