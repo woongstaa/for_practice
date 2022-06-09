@@ -229,13 +229,11 @@ for (var i = 0; i < temp_users.length; i++) {
 ```js
 function _filter(users, predicate) {
   var new_list = [];
-
   for (var i = 0; i < users.length; i++) {
     if (predicate(users[i])) {
       new_list.push(users[i]);
     }
   }
-
   return new_list;
 }
 
@@ -289,3 +287,89 @@ var ages = _map(
   },
 );
 ```
+
+## \_each 만들기
+
+### \_each로 \_filter, \_map의 중복 줄이기
+
+```js
+function _each(list, iter) {
+  for (var i = 0; i < list.length; i++) {
+    iter(list[i]);
+  }
+}
+
+function _filter(list, predi) {
+  var new_list = [];
+  _each(list, function (val) {
+    if (predi(val)) {
+      new_list.push(val);
+    }
+  });
+  return new_list;
+}
+
+function _map(list, mapper) {
+  var new_list = [];
+  _each(list, function (val) {
+    new_list.push(mapper(val));
+  });
+  return new_list;
+}
+```
+
+기존에 만들었던 `_filter`, `_map` 함수를 `_each` 함수를 이용해 더 줄일 수 있으며, 해당하는 명령적인 코드가 숨게됩니다. 이는 선언적인 코드가 되어 오류가 줄고 실수가 줄어드는 코드가 될 수 있습니다.
+
+### 외부 다형성
+
+#### array_alike, argument, document.querySelectorAll
+
+자바스크립트는 이미 `_map`, `_filter`와 같은 기능을 하는 함수가 이미 존재합니다. 하지만 왜 일일이 새롭게 만들었을까요?
+자바스크립트 내장 매서드이기 때문입니다. 매서드는 여러 환경에 영향을 많이 받게됩니다. 또한 자바스크립트는 프로토타입 기반 언어이기 때문에 node은 배열과 흡사한 구조를 가졌지만 배열이 아닌 구조에는 매서드를 활용할 수 없지만, 우리가 새롭게 만든 `_map` `_filter` 함수로는 활용이 가능합니다.
+
+```js
+// 기본 내장 매서드를 활용해서도 같은 기능 구현이 가능하다.
+[1, 2, 3, 4].map(function (val) {
+  return val * 2;
+});
+
+[1, 2, 3, 4].filter(function (val) {
+  return val % 2;
+});
+
+// 하지만 기본 매서드만 활용한다면 Nodelist와 같은 array-like object 자료구조에서는 활용할 수 없습니다.
+document.querySelectorAll('*').map(node => {
+  return node.nodeName;
+}); // map is not a function 에러 발생
+
+_map(document.querySelectorAll('*'), function (node) {
+  return node.nodeName;
+}); // 해당하는 값이 length값이 있고, 그 값이 숫자면 사용할 수 있는 함수입니다. => array like 값이라도 활용할 수 있게 됩니다.
+```
+
+함수형 프로그래밍을 통해 보다 다형성이 높은 함수를 활용할 수 있습니다. 기존의 명령형 프로그래밍은 자료의 타입이 사용할 수 있는 매서드를 결정하는 반면, 함수형 프로그래밍은 자료가 있기 전 단계부터 함수가 존재하기 때문에 평가 시점을 보다 자유롭게 조절할 수 있는 것 입니다.
+
+이렇게 순수함수로 메서드를 대체하는 것이 다형성, 실용성을 고려했을 때 장점이 있는 것 입니다.
+
+### 내부다형성
+
+#### predi, iter, mapper
+
+```js
+_map([1, 2, 3, 4], function (v) {
+  return v + 10;
+});
+```
+
+우리는 주로 함수내에 인자로 함수를 입력한다면, 그 함수를 콜백함수라고 부르는 경향이 있습니다.
+하지만 함수형 프로그래밍에서는 역할에 따라 구분짓는 것이 중요합니다.
+
+- 조건을 반환하는 predicate
+- 반복적으로 작동하는 iterator
+- 무언가를 연결시켜주는 mapper
+
+위 예시처럼 이름을 각각 지어서 사용해주는 것이 좋습니다.
+
+외부 다형성은 그 함수가 사용할 수 있는 자료구조에 따라서 결정되지만, 배열안에 어떤 값이든 수행할 수 있게 만드는 일은 내부의 보조함수에 의해 결정됩니다.
+
+보조함수는 개발자가 다룰 수 있는 방식을 함수에게 위임해 정할 수 있기 때문에 데이터형식에 좀 더 자유롭습니다. 이는 곧 다형성을 높일 수 있는 방법이됩니다.
