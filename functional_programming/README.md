@@ -320,6 +320,8 @@ function _map(list, mapper) {
 
 기존에 만들었던 `_filter`, `_map` 함수를 `_each` 함수를 이용해 더 줄일 수 있으며, 해당하는 명령적인 코드가 숨게됩니다. 이는 선언적인 코드가 되어 오류가 줄고 실수가 줄어드는 코드가 될 수 있습니다.
 
+## 다형성
+
 ### 외부 다형성
 
 #### array_alike, argument, document.querySelectorAll
@@ -373,3 +375,177 @@ _map([1, 2, 3, 4], function (v) {
 외부 다형성은 그 함수가 사용할 수 있는 자료구조에 따라서 결정되지만, 배열안에 어떤 값이든 수행할 수 있게 만드는 일은 내부의 보조함수에 의해 결정됩니다.
 
 보조함수는 개발자가 다룰 수 있는 방식을 함수에게 위임해 정할 수 있기 때문에 데이터형식에 좀 더 자유롭습니다. 이는 곧 다형성을 높일 수 있는 방법이됩니다.
+
+## 커링
+
+### \_curry, \_curryr
+
+커링이란 함수와 인자를 다루는 기법입니다.
+함수에 인자를 하나씩 적용해나가다 필요한 인자가 모두 채워지면 함수 본체를 실행하는 기법입니다.
+
+자바스크립트에는 커링이 지원되지 않지만, **일급함수**가 지원되고 평가시점을 컨트롤 할 수 있기 때문에 해당 기법을 만들 수 있습니다.
+
+```js
+// add_maker와 유사한 구조를 가지고 있습니다.
+function _curry(fn) {
+  return function (a) {
+    return function (b) {
+      return fn(a, b);
+    };
+  };
+}
+
+// 본체 함수인 add를 값으로 가지고 있다 원하는 시점에 평가하는 기법입니다.
+var add = function (a, b) {
+  return a + b;
+};
+
+add(10, 5); // 15
+
+var add = _curry(function (a, b) {
+  return a + b;
+});
+
+var add10 = add(10);
+
+add10(5); // 15
+add(5)(3); // 8
+```
+
+만약 `add(1, 2)` 같이 인자를 동시에 두개를 직접 집어넣으면 어떻게 될까요?
+인자 값을 직접 넣으면 실행이 되지 않고 바로 내부의 함수가 리턴됩니다.
+약간의 수정을 통해 인자가 2개가 들어와도 함수가 리턴되지 않고 바로 실행되게 작성할 수도 있습니다.
+
+```js
+function _curry(fn) {
+  return function (a, b) {
+    if (arguments.length == 2) return fn(a, b);
+    return function (b) {
+      return fn(a, b);
+    };
+  };
+}
+```
+
+이렇게 조건문으로 분기하여 인자의 길이가 2일때는 바로 함수를 반환하게끔 하였습니다.
+
+```js
+function _curry(fn) {
+  return function (a, b) {
+    return arguments.length == 2
+      ? fn(a, b)
+      : function (b) {
+          return fn(a, b);
+        };
+  };
+}
+```
+
+위 코드는 두 조건 모두 결과값을 반환하기 때문에, 삼항연산자를 활용해 좀 더 가독성을 높일 수도 있습니다.
+
+이번엔 `_curry`함수를 통해 빼기 함수를 만들어 보겠습니다.
+
+```js
+var sub = _curry(function (a, b) {
+  return a - b;
+});
+
+sub(10, 5);
+
+var sub10 = sub(10);
+sub10(5); //15
+```
+
+`sub10(5)`의 의미는 10에서 5를 빼는 로직을 가진 함수입니다만 `sub10`이라는 이름 자체의 의미는 10을 뺀다는 의미에 가깝습니다.
+그렇기 때문에 가독성이 좋지 않다고 할 수 있는데, 왼쪽에서 오른쪽으로 가는 로직이 아닌 반대로 동작하는 `curryr(r, right)`함수를 만들어 보겠습니다.
+
+```js
+function _curryr(fn) {
+  return function (a, b) {
+    return arguments.length === 2
+      ? fn(a, b)
+      : function (b) {
+          return fn(b, a);
+        };
+  };
+}
+```
+
+`_curry`와 유사한 구조를 가지고 있지만 `function (b) { return fn(b, a) }`로 구조를 바꿔줌으로써 처음에 대입한 a의 값이 두번째에 위치하게 되면서 `sub10`이라는 이름의 의미에 맞게끔 로직을 구현할 수 있습니다.
+
+또한 `sub(10, 5)`는 10에서 5를 빼는 로직이 이상적이기 때문에, `fn(a, b)`로 순서를 그대로 유지하는 것이 좋습니다.
+
+그래서 로직을 구현할때 인자를 오른쪽부터 채워나갈 것인지 왼쪽부터 채워나갈 것인지에 따라 구현하는 것이 이상적입니다.
+
+### \_get을 만들어 좀 더 간단하게 하기
+
+```js
+function _get(obj, key) {
+  return obj == null ? undefined : obj[key];
+}
+```
+
+`_get`함수는 객체를 안전하게 참조할 수 있는 방법입니다. 만약 객체가 key로 접근하기 애매한 경우 에러를 방지하기위해 안전막으로써 활용할 수 있습니다.
+
+```js
+var user1 = users[0];
+console.log(user1); // ID
+console.log(_get(user1, 'name')); // ID
+
+console.log(users[10].name); // Uncaught TypeError: Cannot read property 'name' of undefined 에러가 발생
+console.log(_get(users[10], 'name')); // 에러가 발생하지 않고, undefined 타입의 값이 출력
+```
+
+`_get`은 커링함수를 이용해 좀 더 간단하게 구현할 수 있습니다.
+
+```js
+var _get = _curryr(function (obj, key) {
+  return obj == null ? undefined : obj[key];
+});
+
+console.log(_get('name')(user1)); // name을 가져오는 함수라는 것이 더 분명해집니다.
+
+let get_name = _get('name');
+get_name(user1); // ID
+```
+
+이렇게 좀 더 분명한 의미를 가진 함수를 만들어 낼 수 있습니다.
+
+또한 기존에 만들어보았던 함수도 이를 활용해 더 간단히 구현해 볼 수 있습니다.
+
+```js
+// before
+var names = _map(
+  _filter(users, function (users) {
+    return users.age >= 30;
+  }),
+  function (user) {
+    return user.name;
+  },
+);
+
+var ages = _map(
+  _filter(users, function (users) {
+    return users.age < 30;
+  }),
+  function (user) {
+    return user.age;
+  },
+);
+
+// after
+
+var names = _map(
+  _filter(users, function (users) {
+    return users.age >= 30;
+  }),
+  _get('name'),
+);
+
+var ages = _map(
+  _filter(users, function (users) {
+    return users.age < 30;
+  }),
+  _get('age'),
+);
+```
