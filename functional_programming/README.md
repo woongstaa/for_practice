@@ -141,7 +141,7 @@ var add10 = add_maker(10);
 console.log(add10(20));
 ```
 
-add_maker는 일급함수와 클로저 개념이 합쳐진 예시입니다. `function (b) { return a + b; };` 이 외부의 값 a를 기억하고 있기 때문에 클로저라고 할 수 있습니다. 또한 인자 a는 참조만 할 뿐 a의 값을 직접 수정할 수 없는 순수함수로 구성되어있습니다.
+add_maker는 **일급함수**와 **클로저** 개념이 합쳐진 예시입니다. `function (b) { return a + b; };` 이 외부의 값 a를 기억하고 있기 때문에 클로저라고 할 수 있습니다. 또한 인자 a는 참조만 할 뿐 a의 값을 직접 수정할 수 없는 순수함수로 구성되어있습니다.
 
 ```js
 function f4(f1, f2, f3) {
@@ -614,3 +614,157 @@ _reduce([1, 2, 3], add; // 6
 _reduce([1, 2, 3], add, 0); // 6
 _reduce([1, 2, 3], add, 10); // 16
 ```
+
+## pipeline 만들기
+
+### \_pipe
+
+```js
+function _pipe() {
+  var fns = arguments;
+  return function (agr) {
+    return _reduce(
+      fns,
+      function (arg, fn) {
+        return fn(arg);
+      },
+      arg,
+    );
+  };
+}
+
+var f1 = _pipe(
+  function (a) {
+    return a + 1; // if f1(1), 1 + 1
+  },
+  function (a) {
+    return a * 2; // 2 * 2
+  },
+  function (a) {
+    return a * a; // 4 * 4
+  },
+);
+```
+
+`_pipe` 는 함수를 순차적으로 작동하게 해주는 함수입니다.
+결국에는 `_reduce` 와 같다고 할 수 있지만, `_reduce` 가 더 추상적이고 `_pipe` 는 함수 단위로 축약된 함수라고 할 수 있습니다.
+
+### \_go
+
+`_go` 는 **즉시실행**되는 pipe 함수라고 할 수 있습니다.
+
+```js
+function _go(arg) {
+  var fns = _rest(arguments); // arguments에서 첫번째가 제외된 값이어야 하기 때문에 _rest를 활용해 제거
+
+  return _pipe.apply(null, fns)(arg);
+}
+_go(
+  1,
+  function (a) {
+    return a + 1; // if f1(1), 1 + 1
+  },
+  function (a) {
+    return a * 2; // 2 * 2
+  },
+  function (a) {
+    return a * a; // 4 * 4
+  },
+  console.log,
+);
+```
+
+### users에 \_go적용
+
+`_go` 를 활용해 보다 간단하게 로직을 구성할 수 있습니다.
+
+```js
+// before
+var names = _map(
+  _filter(users, function (users) {
+    return users.age >= 30;
+  }),
+  _get('name'),
+);
+
+var ages = _map(
+  _filter(users, function (users) {
+    return users.age < 30;
+  }),
+  _get('age'),
+);
+
+// after
+_go(
+  users,
+  function (users) {
+    return _filter(users, function (user) {
+      return user.age >= 30;
+    });
+  },
+  function (users) {
+    return _map(users, _get('name'));
+  },
+  console.log,
+);
+
+_go(
+  users,
+  function (users) {
+    return _filter(users, function (user) {
+      return user.age < 30;
+    });
+  },
+  function (users) {
+    return _map(users, _get('age'));
+  },
+  console.log,
+);
+```
+
+이렇게 좀 더 직관적이게 순서대로 함수가 흘러가는 것처럼 보이게 만들 수 있습니다.
+
+추가적으로 `_curryr` 을 활용해 더 자연스럽게 수정할 수 있습니다.
+
+```js
+var _map = _curryr(_map);
+var _filter = _curryr(_filter);
+
+// before adopting _curryr
+_map([1, 2, 3], function (val) {
+  return val * 2;
+});
+
+// after adopting _curryr
+_map(
+  function (val) {
+    return val * 2;
+  },
+  [1, 2, 3],
+);
+// _curryr을 통해 평가시점을 바꿔 좀 더 가독성을 높일 수 있습니다.
+
+// after adopting _curryr
+_go(
+  users,
+  _filter(function (user) {
+    return user.age >= 30;
+  }),
+  _map(_get('name')),
+  console.log,
+);
+
+// arrow function을 활용해 가독성을 더 높일 수 있습니다.
+_go(
+  users,
+  _filter(user => user.age < 30),
+  _map(_get('age')),
+  console.log,
+);
+```
+
+`_curry`, `_pipe` 의 개념을 통해 함수의 평가 시점이나 인자가 적용되는 시점을 분리시켜 함수형 프로그래밍에 적용할 수 있습니다.
+
+명령형으로 작성했던 코드와 비교해본다면, 가독성이 높아지고 직관적인 코드가 된 것을 확인할 수 있습니다.
+
+> (아직은 익숙하지 않아서 많이 봐야될 것 같습니다... 🥲)
