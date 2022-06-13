@@ -534,7 +534,6 @@ var ages = _map(
 );
 
 // after
-
 var names = _map(
   _filter(users, function (users) {
     return users.age >= 30;
@@ -548,4 +547,70 @@ var ages = _map(
   }),
   _get('age'),
 );
+```
+
+## Reduce
+
+### \_reduce 만들기
+
+```js
+function _reduce(list, iter, memo) {
+  _each(list, function (val) {
+    memo = iter(memo, val);
+  });
+  return memo;
+}
+
+_reduce([1, 2, 3], add, 0); // 6
+
+// memo = add(0, 1);
+// memo = add(memo, 2);
+// memo = add(memo, 3);
+// return memo
+```
+
+`_reduce`는 배열을 인자로 받아, 이후 로직을 재귀적으로 반복하여 동작하는 함수입니다.
+배열로 하나의 결과물을 반환할 때 주로 사용합니다.
+
+또한 선언적으로 어떤 로직을 재귀적으로 사용할 것인지 명시하기 때문에 이상적입니다.
+
+그리고 세번째 인자값을 생략시킬 수도 있습니다.
+
+```js
+function _reduce(list, iter, memo) {
+  if (arguments.length == 2) {
+    memo = list[0];
+    list = list.slice(1);
+  }
+  _each(list, function (val) {
+    memo = iter(memo, val);
+  });
+  return memo;
+}
+```
+
+`slice` 메서드를 사용하게 된다면 배열에만 작동하는 로직이 되어버려 다형성 측면에서 아쉬워집니다.
+하지만 `call` 을 활용해 `_rest` 함수를 만들어 **arraylike** 배열도 **array**로 만들 수 있습니다.
+
+```js
+var slice = Array.prototype.slice;
+
+function _rest(list, num) {
+  return slice.call(list, num || 1);
+}
+
+function _reduce(list, iter, memo) {
+  if (arguments.length == 2) {
+    memo = list[0];
+    list = _rest(list);
+  }
+  _each(list, function (val) {
+    memo = iter(memo, val);
+  });
+  return memo;
+}
+
+_reduce([1, 2, 3], add; // 6
+_reduce([1, 2, 3], add, 0); // 6
+_reduce([1, 2, 3], add, 10); // 16
 ```
