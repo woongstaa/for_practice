@@ -768,3 +768,145 @@ _go(
 명령형으로 작성했던 코드와 비교해본다면, 가독성이 높아지고 직관적인 코드가 된 것을 확인할 수 있습니다.
 
 > (아직은 익숙하지 않아서 많이 봐야될 것 같습니다... 🥲)
+
+## 다형성 높이기, \_keys, error
+
+### \_each에 null 넣어도 에러 안나기
+
+```js
+_each(null, console.log); // error!
+
+var _length = _get('length');
+
+function _each(list, iter) {
+  for (var i = 0, len = _length(list); i < len; i++) {
+    iter(list[i]);
+  }
+  return list;
+}
+```
+
+### \_keys 만들기, \_keys에서도 \_is_object인지 검사하여 null 에러 안나게
+
+```js
+Object.keys({ name: 'ID', age: 33 }); // [name, age]
+Object.keys([1, 2, 3, 4]); // ["1", "2", "3", "4"]
+Object.keys(10); // []
+Object.keys(null); // error!
+
+function _is_object(obj) {
+  return typeof obj == 'object' && !!obj;
+}
+
+function _keys(obj) {
+  return _is_object(obj) ? Object.keys(obj) : [];
+}
+```
+
+### \_each를 활용해 외부 다형성 높이기
+
+```js
+_each(
+  {
+    13: 'ID',
+    19: 'HD',
+    29: 'YD',
+  },
+  function (name) {
+    console.log(name);
+  },
+); // [];
+```
+
+`_each` 함수를 이용해도 length값이 없기 때문에 작동하지 않습니다.
+`_each`를 수정하여 더 발전시켜봅시다
+
+```js
+function _is_object(obj) {
+  return typeof obj == 'object' && !!obj;
+}
+
+function _keys(obj) {
+  return _is_object(obj) ? Object.keys(obj) : [];
+}
+
+function _each(list, iter) {
+  var keys = _keys(list);
+  for (var i = 0, len = keys.length; i < len; i++) {
+    iter(list(keys[i]));
+  }
+  return list;
+}
+
+_each(
+  {
+    13: 'ID',
+    19: 'HD',
+    29: 'YD',
+  },
+  function (name) {
+    console.log(name);
+  },
+); // "ID" "HD" "YD" 순차적으로 리턴 됨;
+```
+
+`_keys`를 통해 값이 있다면 배열로 타입변환을 시켜주고, null같은 빈 값이면 빈 배열로 변환을 시켜줌으로써 다형성을 높이면서 에러가 발생할 상황을 제거할 수 있습니다.
+
+```js
+// _map 속에 _each가 있기 때문에 더 간단하게 활용 가능합니다
+_map(
+  {
+    13: 'ID',
+    19: 'HD',
+    29: 'YD',
+  },
+  function (name) {
+    return name.toLowerCase();
+  },
+); // ['id', 'hd', 'yd']
+
+// _go를 활용해 더 간단한게 표현
+_go(
+  {
+    13: 'ID',
+    19: 'HD',
+    29: 'YD',
+  },
+  _map(function (name) {
+    return name.toLowerCase();
+  }),
+  console.log,
+);
+
+// users의 데이터를 가지고 활용하는 방법
+_go(
+  users, // [{ id: 1, name: 'ID', age: 36 }, ...]의 구조를 가지고 있음, null 값이어도 빈 배열이 반환
+  _map(function (user) {
+    return user.name;
+  }),
+  _map(function (name) {
+    return name.toLowerCase();
+  }),
+  console.log,
+);
+```
+
+타입을 강하게 체크하기 보다는 다형성을 극대화시키면서 진행하는 것이 함수형 프로그래밍 입니다.
+
+```js
+_go(
+  {
+    1: users[0],
+    3: users[2],
+    5: users[4],
+  },
+  _map(function (user) {
+    return user.name.toLowerCase();
+  }),
+  console.log,
+);
+```
+
+`_map` 에게 집어넣을 데이터 형식을 개발자가 알기 때문에 보조함수를 이용해 보다 자유롭게 데이터를 가공할 수 있게 됩니다.
+
+위 예시도 집어넣은 데이터의 형식이 `{ 1: { id: 1, name: 'ID', age: 36 }, ... }` 같은 형식을 가지고 있고 우리는 그 중에서 `user.name` 의 값이 필요하기 때문에 보조함수를 이용해 그 값을 가져오면 되는 것 입니다. 이 때 가저오는 데이터의 타입이 뭐든 상관없기 때문에 다형성이 높은 보조함수가 빛을 발하게 되는 것 입니다.
